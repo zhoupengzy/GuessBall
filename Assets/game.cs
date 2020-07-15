@@ -11,13 +11,10 @@ public class game : MonoBehaviour {
 
     public Vector3[] orgPos;
 
+    public int moveTime = 10;
+
     // Use this for initialization
     void Start () {
-
-// 		for (int i = 0; i < Boby.Length; i++)
-//         {
-//             orgPos[i] = Boby[i].localPosition;
-//         }
 	}
 	
 	// Update is called once per frame
@@ -28,25 +25,13 @@ public class game : MonoBehaviour {
     public void OnClickStart()
     {
         OnClickReset();
-        int[] indexs = GetRandom(2);
-
-
-        Vector3 midPos1 = new Vector3((orgPos[indexs[0]].x+orgPos[indexs[1]].x)/2, 0, 0.4f);
-        Vector3 midPos2 = new Vector3(midPos1.x, 0, -0.5f);
-        Vector3[] path1 = { orgPos[indexs[0]], midPos1, orgPos[indexs[1]]};
-        Vector3[] path2 = { orgPos[indexs[1]], midPos2, orgPos[indexs[0]]};
-
+       
+        int rd = Random.Range(0, 3);
+        Boby[rd].GetComponent<Boby>().ShowBallAni();
+       
         Sequence tween = DOTween.Sequence();
-        tween.Append(
-                Boby[indexs[0]].transform.DOLocalPath(path1, 0.6f, PathType.CatmullRom)
-                .SetOptions(false)
-                .SetEase(Ease.Linear)
-                );
-        tween.Join(
-                Boby[indexs[1]].transform.DOLocalPath(path2, 0.6f, PathType.CatmullRom)
-                .SetOptions(false)
-                .SetEase(Ease.Linear)
-                );
+        tween.AppendInterval(2);
+        tween.AppendCallback(MoveOnce);
 
     }
 
@@ -57,6 +42,49 @@ public class game : MonoBehaviour {
         {
             Boby[i].GetComponent<Boby>().Reset();
         }
+        moveTime = 10;
+    }
+
+
+    private void MoveOnce()
+    {
+
+        int[] indexs = GetRandom(2);
+
+        Vector3 pos1 = Boby[indexs[0]].localPosition;
+        Vector3 pos2 = Boby[indexs[1]].localPosition;
+
+        Vector3 midPos1 = new Vector3((pos1.x + pos2.x) / 2, 0, 0.5f);
+        Vector3 midPos2 = new Vector3(midPos1.x, 0, -0.5f);
+        Vector3[] path1 = { pos1, midPos1, pos2 };
+        Vector3[] path2 = { pos2, midPos2, pos1 };
+
+        Sequence tween = DOTween.Sequence();
+        tween.Append(
+                Boby[indexs[0]].transform.DOLocalPath(path1, 0.3f, PathType.CatmullRom)
+                .SetOptions(false)
+                .SetEase(Ease.Linear)
+                );
+        tween.Join(
+                Boby[indexs[1]].transform.DOLocalPath(path2, 0.3f, PathType.CatmullRom)
+                .SetOptions(false)
+                .SetEase(Ease.Linear)
+                );
+
+        moveTime--;
+        if (moveTime > 0)
+        {
+            tween.AppendCallback(MoveOnce);
+        }
+        else
+        {
+            for (int i = 0; i < Boby.Length; i++)
+            {
+                Boby[i].GetComponent<Boby>().isCanClick = true;
+            }
+        
+        }
+
     }
 
     private int[] GetRandom(int RmNum)
@@ -64,13 +92,16 @@ public class game : MonoBehaviour {
         Hashtable hashtable = new Hashtable();
         System.Random rm = new System.Random();
         int[] RmValue = {0,1};
+        int index = 0;
         for (int i = 0; hashtable.Count < RmNum; i++)
         {
             int nValue = rm.Next(Boby.Length);
             if (!hashtable.ContainsValue(nValue))
             {
                 hashtable.Add(nValue, nValue);
-                RmValue[i] = nValue;
+                RmValue[index] = nValue;
+                //Debug.Log(nValue);
+                index++;
             }
         }
         return RmValue;
